@@ -1,0 +1,93 @@
+#!/bin/sh
+# vim: nospell
+
+set -C
+
+TMPDIR=$(mktemp -d)
+ME=$(id -nu)
+
+DAYS=1
+
+if [ -n "$1" -a "$1" -eq "$1" ] >/dev/null 2>/dev/null
+then
+	DAYS=$1
+fi
+
+exec 3</etc/passwd
+
+IFS=:
+while read -r USER TMP ID GID DATA HOME SHELL
+do
+	# Only allow root to look at all users.
+	# Otherwsie, a specific user can only get report on their own files.
+	test "$ME" = "root" -o "$ME" = "$USER" || continue
+
+	# Only apply this logic to user with homes in /home
+	test "${HOME%/*}" = "/home" || continue
+
+	# Users with shells set to /bin/false
+	# don't get to have files in /home
+	test "$SHELL" = "/bin/false" && continue
+
+	# Get a list of all files not modified in the last day.
+	find -H "$HOME" -xdev ! -type d -mtime "+$DAYS" >"${TMPDIR}/${USER}.raw"
+
+	# We filter this list based on some inbuilt rules
+	exec 4<"${TMPDIR}/${USER}.raw"
+	exec 5>"${TMPDIR}/${USER}.filter"
+
+	while read PATH
+	do
+		# Get the filename relative to the home directory
+		FILE=${PATH#$HOME/}
+
+		test "$FILE" = ".bashrc"       && continue
+		test "$FILE" = ".bash_history" && continue
+
+		test "$FILE" = ".zshrc"        && continue
+		test "$FILE" = ".zsh-history"  && continue
+
+		test "$FILE" = ".vimrc"        && continue
+		test "$FILE" = ".viminfo"      && continue
+
+		test "$FILE" = ".ssh/known_hosts"     && continue
+		test "$FILE" = ".ssh/known_hosts.old" && continue
+
+		# Get the folder name
+		DIR=${FILE%%/*}
+
+		test "$DIR" = ".aptitude"  && continue
+		test "$DIR" = ".zcompdump" && continue
+		test "$DIR" = ".zshcache"  && continue
+
+		# If there is a git repo in ~/dotfiles, check to see if it contains
+		# this file.
+		if [ -d "${HOMEDIR}/dotfiles" -a -d "${HOMEDIR}/dotfiles/objects"  ]
+		then
+			if [ "$FILE" = git --git-dir="${HOMEDIR}/dotfiles" ls-tree --name-only HEAD "$FILE" ]
+			then
+				continue
+			fi
+		fi
+
+		# Also exclude any path included in dpkg 
+		dpkg --search "$PATH" >/dev/null 2>/dev/null && continue
+
+		printf "%s\n" "$PATH" >&5
+	done <&4
+
+	exec 4<&-
+	exec 5>&-
+
+	test -s "${TMPDIR}/${USER}.filter" || continue
+
+	# Output the list of old files to the console.
+	printf " === %s ===\n" "$USER"
+	cat "${TMPDIR}/${USER}.filter"
+	printf "\n"
+done <&3
+
+exec 3<&-
+
+rm -Rf "$TMPDIR"
+

@@ -1,0 +1,52 @@
+cruft-utils (2.0-1) stable
+
+  * Remove custom configuration.
+  * Add configuration directory "/usr/lib/cruft-utils".
+  * Add manpages.
+
+  [ General Cruft ]
+
+  * Present checksums of configuration files.
+  * Changed package files can be filtered via "/usr/lib/cruft-utils/changes-filter".
+  * Changed package files can be filtered via "/usr/lib/cruft-utils/config-filter".
+
+  [ Homedir Cruft ]
+
+  * Add parameter for maximum age of files in days.
+
+
+
+cruft-utils (1.2-1) stable
+
+  * Add option to not send email, but write to stdout instead.
+  * Add dependency on debsums.
+
+ -- Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>  Mon, 14 Oct 2019 16:22:22 +0000
+
+cruft-utils (1.1-1) stable
+
+  * Add a new tool to generate a diff of package files changed on this machine.
+  * Prevent scanning of /storage.
+
+ -- Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>  Tue, 11 Dec 2018 17:25:44 +0000
+
+cruft-utils (1.0-3) stable
+
+  * Capture errors from debsums.
+  * Use apt-get for auto-remove dry run (suppresses error about unstable interface)
+
+ -- Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>  Thu, 19 Apr 2018 09:44:26 +0000
+
+cruft-utils (1.0-2) stable
+
+  * Correct sendmail dependency to sendamil | postfix.
+  * Correct diff dependency to diffutils.
+
+ -- Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>  Wed, 11 Apr 2018 12:53:32 +0000
+
+cruft-utils (1.0-1) stable
+
+  * Move general-cruft and homedir-cruft from task-aws to own package.
+  * Add list of auto-removeable packages to the general-cruft output.
+
+ -- Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>  Wed, 11 Apr 2018 12:43:52 +0000

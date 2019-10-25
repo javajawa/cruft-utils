@@ -1,0 +1,8 @@
+usr/bin/homedir-cruft
+usr/bin/general-cruft
+usr/bin/generate-package-patch
+usr/lib/cruft-utils
+usr/share/doc/cruft-utils
+usr/share/doc/cruft-utils/changelog.Debian.gz
+usr/share/man/man1/general-cruft.1.gz
+usr/share/man/man1/homedir-cruft.1.gz

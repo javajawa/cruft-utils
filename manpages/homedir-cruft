@@ -1,0 +1,38 @@
+.\" vim: syntax=groff
+.\" manual page for general-cruft
+.TH man 1 "today" "HEAD" "homedir-cruft"
+
+.SH NAME
+homedir-cruft -- Report on unused files in $HOME
+
+.SH SYNOPSIS
+
+\fBhomedir-cruft\fP [\fImax-days\fP]
+
+.SH EXAMPLES
+
+\fBsudo homedir-cruft\fP
+\fBhomedir-cruft 7\fP
+
+.SH DESCRIPTION
+
+\fBhomedir-druct\fP reports file that continue to exist in a home directory
+for more than a set period of time. It is a partner for \fBcruft\fP(1) and
+is used by \fBgeneral-cruft\fP(1).
+
+This tool is intended for use on machines which require high levels of
+cleanliness -- for example, servers handling personal information.
+
+.SH BUG REPORTING
+
+Bugs should be reported to the github project
+	https://github.com/javajawa/cruft-utils
+
+.SH SEE ALSO
+
+\fBgeneral-cruft\fP(1), \fBcruft\fP(1)
+
+.SH AUTHOR
+
+\fBgeneral-cruft\fP was originally written by Benedict Harcourt, who also
+wrote this man page. 

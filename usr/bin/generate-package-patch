@@ -1,0 +1,32 @@
+#!/bin/sh
+
+PACKAGE=$1
+TMPDIR=$(mktemp -d)
+
+test $(id -u) -eq 0
+ROOT=$?
+
+cd "$TMPDIR"
+
+test $ROOT -eq 0 && chown _apt:root "$TMPDIR"
+sudo -u _apt apt-get download -q $(dpkg-query -W -f='${binary:Package}=${Version}' "$PACKAGE") >&2 || exit 1
+test $ROOT -eq 0 && chown root:root "$TMPDIR"
+
+DEB=$(ls)
+dpkg -x "$DEB" .
+rm "$DEB"
+
+ARGS=-pur
+if test -t 1
+then
+	# Leave a gap between apt output and data in stream mode
+	echo
+	echo
+
+	ARGS="$ARGS --color=always"
+fi
+
+sudo diff $ARGS . / | grep -v '^Only in /'
+
+cd /
+rm -Rf "$TMPDIR"

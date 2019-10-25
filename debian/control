@@ -1,0 +1,14 @@
+Source: cruft-utils
+Package: cruft-utils
+Section: admin
+Priority: optional
+Architecture: all
+Depends: cruft | cruft-ng,
+ apt,
+ debsums,
+ diffutils,
+ dpkg,
+ findutils
+Essential: no
+Maintainer: Benedict Harcourt <ben.harcourt@harcourtprogramming.co.uk>
+Description: Cruft utils

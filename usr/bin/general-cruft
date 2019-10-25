@@ -1,0 +1,156 @@
+#!/bin/sh
+# vim: nospell
+
+#####################################################
+#                                                   #
+# General Cruft is a support utility that combines  #
+# the output of debsums, cruft, and apt to inform   #
+# you of the tidyiness of a machine.                #
+#                                                   #
+# It reports:                                       #
+#                                                   #
+#  - All manually installed apt packages            #
+#  - All packages that be automatically removed     #
+#  - All changed package and configuration files    #
+#  - All files reported missing by cruft            #
+#  - All broken symlinks and extrnuous files        #
+#  - Files in home directories, excluding the       #
+#    'expected' dotfiles, that are more than 2 days #
+#    old.                                           #
+#                                                   #
+#####################################################
+
+set -C
+
+if [ "$(id -u)" -ne 0 ]
+then
+	printf "Must be run as root\n" >&2
+	exit 1
+fi
+
+TMPDIR=$(mktemp -d)
+
+read HOSTNAME </etc/hostname
+export HOSTNAME
+
+exec 3>"${TMPDIR}/data"
+
+#####################################################
+#                                                   #
+# Output the checksums of all the invovled files    #
+#                                                   #
+#####################################################
+
+printf "Cruft report for %s\nChecksum: " "$HOSTNAME" >&3
+find "$0" "/usr/lib/cruft-utils" -type f -exec sha1sum '{}' \+ >&3
+
+#####################################################
+#                                                   #
+# The list of packages manually installed on the    #
+# machine
+#                                                   #
+#####################################################
+
+printf "\n\n==== Manually Installed Packages ====\n\n" >&3
+apt-mark showmanual >&3
+
+#####################################################
+#                                                   #
+#  Changes to package config files                  #
+#                                                   #
+#  This list can be filtered by                     #
+#    /usr/lib/cruft-utils/config-filter             #
+#                                                   #
+#####################################################
+
+debsums -ec >"${TMPDIR}/config" 2>&1
+
+if [ -r "/usr/lib/cruft-utils/config-filter" ]
+then
+	egrep -v -f - "${TMPDIR}/config" >"${TMPDIR}/config.filter"
+else
+	mv "${TMPDIR}/config" "${TMPDIR}/config.filter"
+fi
+
+if [ -s "${TMPDIR}/config.filter" ]
+then
+	printf "\n\n==== Changed Configuration Files ====\n\n" >&3
+	cat "${TMPDIR}/config.filter" >&3
+fi
+
+#####################################################
+#                                                   #
+#  Changes to package files (excluding config files #
+#                                                   #
+#  This list can be filtered by                     #
+#    /usr/lib/cruft-utils/changes-filter            #
+#                                                   #
+#####################################################
+
+
+debsums -c >"${TMPDIR}/changes" 2>&1
+
+if [ -r "/usr/lib/cruft-utils/changes-filter" ]
+then
+	egrep -v -f - "${TMPDIR}/changes" >"${TMPDIR}/changes.filter"
+else
+	mv "${TMPDIR}/changes" "${TMPDIR}/changes.filter"
+fi
+
+if [ -s "${TMPDIR}/changes" ]
+then
+	printf "\n\n==== Changed Package Files ====\n\n" >&3
+	cat "${TMPDIR}/changes" >&3
+fi
+
+#####################################################
+#                                                   #
+# Get the output from cruft.                        #
+#                                                   #
+#  Two items are removed from the output:           #
+#   - The symlink target for /etc/mtab              #
+#   - The systemd tty target symlinks (for some VMs)# 
+#                                                   #
+#####################################################
+
+printf "\n\n" >&3
+cruft --ignore "$TMPDIR" | sed \
+	-e '/^---- broken symlinks: \/ ----/,/^----/{ \@/etc/mtab$@d }' \
+	-e '/^---- missing: dpkg ----/,/^----/{ \@/lib/systemd/system/getty.target.wants/getty-static.service$@d }' \
+>&3
+
+#####################################################
+#                                                   #
+# List 
+#                                                   #
+#####################################################
+
+apt-get autoremove --dry-run | grep 'Remv' >"${TMPDIR}/removable"
+
+if [ -s "${TMPDIR}/removable" ]
+then
+	printf "\n\n==== Removable Packages ====\n\n" >&3
+	cat "${TMPDIR}/removable" >&3
+fi
+
+printf "\n\n" >&3
+homedir-cruft >&3
+
+exec 3>&-
+
+if [ "$1" = '--mail' ]
+then
+	{
+		printf "From: Cruft Daemon <cruft@%s>\r\n" "$HOSTNAME"
+		printf "To: %s\r\n" "${2:-root}"
+		printf "Subject: Cruft report from %s\r\n" "$HOSTNAME"
+		printf "Content-Type: text/plain\r\n"
+		printf "Content-Transfer-Encoding: base64\r\n\r\n"
+		base64 "${TMPDIR}/data"
+
+	} | sendmail -i "${2:-root}"
+else
+	cat "${TMPDIR}/data"
+fi
+
+rm -Rf "$TMPDIR"

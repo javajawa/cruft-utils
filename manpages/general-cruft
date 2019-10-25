@@ -1,0 +1,74 @@
+.\" vim: syntax=groff
+.\" manual page for general-cruft
+.TH man 1 "today" "HEAD" "general-cruft"
+
+.SH NAME
+general-cruft -- Computer Cleanliness Report
+.SH SYNOPSIS
+
+\fB general-cruft\fP [\fB--mail\fP [\fIdestination\fP]]
+.SH DESCRIPTION
+
+\fBgeneral-cruft\fP is a support utilitiy that combines the output of
+debsums, cruft, and apt to inform you of the tidyiness of a machine.
+
+Output is sent to standard output, unless \fB--mail\fP is provided,
+in which case an email will be sent to the specified destination, or
+root@localhost.
+
+It reports:
+.IP \[bu]
+All manually installed apt packages
+.IP \[bu]
+All packages that be automatically removed
+.IP \[bu]
+All changed package and configuration files
+.IP \[bu]
+All files reported missing by cruft
+.IP \[bu]
+All broken symlinks and extrenuous files
+
+.SH GENERAL OPTIONS
+
+.TP
+\fB--mail [destination]\fP
+Send an email to \fB<destination>\fP (or, by default, <root@localhost>)
+rather than reporting to standard output.
+.SH REPORT FORMAT
+
+The report is split into several sub reports based on the underlying tool
+that is using them.
+The first section is the checksums for all of the general-cruft files in
+use, designed to check that cruft itself has not been modified.
+This does not work as a security mechanism, but allows for cross-referencing
+information over time or between machines.
+
+After that, each section which generated information is output (with the
+\fBcruft\fP(1) always having at least its section header).
+
+.SH FILES
+
+.TP
+\fI/usr/lib/cruft-utils/changes-filter\fR
+
+A regex-per-line file of changed package files to ignore from \fBdebsums\fP(1).
+
+.TP
+\fI/usr/lib/cruft-utils/config-filter\fR
+
+A regex-per-line file of changed package \fBconfiguration\fP files to ignore
+from \fBdebsums\fP.
+
+.SH BUG REPORTING
+
+Bugs should be reported to the github project
+	https://github.com/javajawa/cruft-utils
+
+.SH SEE ALSO
+
+\fBdebsums\fP(1), \fBcruft\fP(1), \fBapt-mark\fP(1)
+
+.SH AUTHOR
+
+\fBgeneral-cruft\fP was originally written by Benedict Harcourt, who also
+wrote this man page. 
